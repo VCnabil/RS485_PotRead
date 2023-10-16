@@ -14,85 +14,84 @@ namespace ConsoleRS485
         static SerialPort mySerialPort;
         static Timer timer;
         static void Main(string[] args)
-
         {
+            CanManager canManager = new CanManager();
 
+            canManager.ListChannels();
+            canManager.OpenChannel(0);
+            canManager.SetBusParams();
+            canManager.GoOnBus();
+            byte[] message = { 0, 0, 0, 0, 0, 0, 0, 0 };
+            int cnt = 0;
 
+            RS485Manager manager = new RS485Manager("COM3", 115200);
+            manager.Start();
 
-            mySerialPort = new SerialPort("COM3");
-
-            mySerialPort.BaudRate = 115200; 
-            mySerialPort.Parity = Parity.None;
-            mySerialPort.StopBits = StopBits.One;
-            mySerialPort.DataBits = 8;
-            mySerialPort.Handshake = Handshake.None;
-           // mySerialPort.ReceivedBytesThreshold = 1;
-            mySerialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
-            mySerialPort.Open();
-            timer = new Timer(800);
-            timer.Elapsed += new ElapsedEventHandler(SendCommand);
-            timer.Start();
             Console.WriteLine("Reading RS485 data. Press 'q' to exit...");
+
+            Timer printTimer = new Timer(180); // 1 second
+            printTimer.Elapsed += (sender, e) =>
+            {
+                cnt++;
+                if (cnt > 254) cnt = 0;
+                Console.Clear();
+                Console.WriteLine($"rez14: {manager.getREZ14()}");
+                Console.WriteLine($"rez14_l: {manager.getREZ14_low():X2}, rez14_H: {manager.getREZ14_HIGH():X2}");
+
+                Console.WriteLine($"rez12: {manager.getREZ12()} ");
+
+                Console.WriteLine($"12l: {manager.getREZ12_low():X2}, rez12_H: {manager.getREZ12_HIGH():X2}");
+                message[0] = manager.getREZ12_low();
+                message[1] = manager.getREZ12_HIGH();
+                message[2] = manager.getREZ14_low();
+                message[3] = manager.getREZ14_HIGH();
+                message[6] = (byte)cnt;
+                message[7] = (byte) (cnt/2);
+
+                canManager.SendMessage(0x18FFFA00, message);
+
+            };
+            printTimer.Start();
 
             while (true)
             {
+  
+
                 if (Console.ReadKey().KeyChar == 'q')
                 {
                     break;
                 }
             }
-            timer.Stop();
-            mySerialPort.Close();
+
+            printTimer.Stop();
+            manager.Stop();
             Console.WriteLine("Serial port closed. Exiting...");
-        }
-        private static void SendCommand(object sender, ElapsedEventArgs e)
-        {
-            // Send the read position command (0x54)
-            byte[] command = new byte[] { 0x54 };
-            mySerialPort.Write(command, 0, command.Length);
-        }
-        private static int ReverseBits(byte b)
-        {
-            int rev = 0;
-            for (int i = 0; i < 8; i++)
-            {
-                rev <<= 1;
-                rev |= (b & 1);
-                b >>= 1;
-            }
-            return rev;
-        }
-        private static void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
-        {
-            SerialPort sp = (SerialPort)sender;
-            int bytesToRead = sp.BytesToRead;
-            byte[] receivedData = new byte[bytesToRead];
-            sp.Read(receivedData, 0, bytesToRead);
 
-            // Debug: Show the number of bytes received
-            Console.WriteLine($"Bytes received: {bytesToRead}");
 
-            // Debug: Show the received bytes in hexadecimal
-            Console.Write("Received bytes: ");
-            foreach (byte b in receivedData)
-            {
-                Console.Write($"{b:X2} ");
-            }
-            Console.WriteLine();
+            canManager.GoOffBus();
+            canManager.CloseChannel();
 
-            if (receivedData.Length >= 2)
-            {
-                byte reversedLowByte = receivedData[0];
-                byte reversedHighByte = receivedData[1];
+            //RS485Manager manager = new RS485Manager("COM3", 115200);
+            //manager.Start();
 
-                byte b0 = reversedLowByte;// 0xE4;
-                byte b2 = reversedHighByte;// 0xF9;
-                byte b1 = (byte)(b2 & 0x3F);
-                int rez14 = (b1 << 8) | b0;
-                int rez12 = rez14 >> 2;
-                Console.Clear();
-                Console.WriteLine(rez12);
-            }
+            //Console.WriteLine("Reading RS485 data. Press 'q' to exit...");
+
+            //while (true)
+            //{
+            //    Console.Clear();
+            //    Console.WriteLine(manager.getREZ14());
+            //    Console.WriteLine(manager.getREZ12());
+            //    if (Console.ReadKey().KeyChar == 'q')
+            //    {
+            //        break;
+            //    }
+            //}
+
+            //manager.Stop();
+            //Console.WriteLine("Serial port closed. Exiting...");
+
+
         }
+ 
     }
 }
