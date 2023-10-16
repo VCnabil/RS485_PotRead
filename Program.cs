@@ -29,7 +29,7 @@ namespace ConsoleRS485
 
             Console.WriteLine("Reading RS485 data. Press 'q' to exit...");
 
-            Timer printTimer = new Timer(180); // 1 second
+            Timer printTimer = new Timer(80); // 1 second
             printTimer.Elapsed += (sender, e) =>
             {
                 cnt++;
