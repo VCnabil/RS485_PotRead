@@ -71,25 +71,7 @@ namespace ConsoleRS485
             canManager.GoOffBus();
             canManager.CloseChannel();
 
-            //RS485Manager manager = new RS485Manager("COM3", 115200);
-            //manager.Start();
-
-            //Console.WriteLine("Reading RS485 data. Press 'q' to exit...");
-
-            //while (true)
-            //{
-            //    Console.Clear();
-            //    Console.WriteLine(manager.getREZ14());
-            //    Console.WriteLine(manager.getREZ12());
-            //    if (Console.ReadKey().KeyChar == 'q')
-            //    {
-            //        break;
-            //    }
-            //}
-
-            //manager.Stop();
-            //Console.WriteLine("Serial port closed. Exiting...");
-
+    
 
         }
  
