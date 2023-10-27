@@ -15,6 +15,7 @@ namespace ConsoleRS485
         static Timer timer;
         static void Main(string[] args)
         {
+            
             CanManager canManager = new CanManager();
 
             canManager.ListChannels();
@@ -24,17 +25,20 @@ namespace ConsoleRS485
             byte[] message = { 0, 0, 0, 0, 0, 0, 0, 0 };
             int cnt = 0;
 
-            RS485Manager manager = new RS485Manager("COM3", 115200);
+            RS485Manager manager = new RS485Manager("COM7", 115200);
             manager.Start();
 
             Console.WriteLine("Reading RS485 data. Press 'q' to exit...");
 
-            Timer printTimer = new Timer(180); // 1 second
+            Timer printTimer = new Timer(100); // 1 second
             printTimer.Elapsed += (sender, e) =>
             {
                 cnt++;
                 if (cnt > 254) cnt = 0;
                 Console.Clear();
+
+                Console.WriteLine($"raw_l: {manager.getRAW_low():X2}, raw_H: {manager.getRAW_HIGH():X2}");
+                Console.WriteLine("");
                 Console.WriteLine($"rez14: {manager.getREZ14()}");
                 Console.WriteLine($"rez14_l: {manager.getREZ14_low():X2}, rez14_H: {manager.getREZ14_HIGH():X2}");
 
@@ -49,6 +53,14 @@ namespace ConsoleRS485
                 message[7] = (byte) (cnt/2);
 
                 canManager.SendMessage(0x18FFFA00, message);
+
+
+                byte low = manager.getRAW_low();// 0xE4;
+                byte hig = (byte)(manager.getRAW_HIGH() & 0xF3);// 0x39;
+
+                int full = (int)(hig << 8) | low; ;// 0x39E4;
+                int twelvbit = full >> 2;
+                Console.WriteLine($"twelvbit: {twelvbit:X2}, dec {twelvbit}");
 
             };
             printTimer.Start();
@@ -71,7 +83,7 @@ namespace ConsoleRS485
             canManager.GoOffBus();
             canManager.CloseChannel();
 
-            //RS485Manager manager = new RS485Manager("COM3", 115200);
+            //RS485Manager manager = new RS485Manager("COM7", 2000000);
             //manager.Start();
 
             //Console.WriteLine("Reading RS485 data. Press 'q' to exit...");

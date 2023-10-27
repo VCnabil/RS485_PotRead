@@ -16,6 +16,10 @@ namespace ConsoleRS485
 
         private byte rez14_b0_LOW;
         private byte rez14_b1_HIGH;
+
+        private byte raw_b0_LOW;
+        private byte raw_b1_HIGH;
+
         public RS485Manager(string portName, int baudRate)
         {
             mySerialPort = new SerialPort(portName)
@@ -33,7 +37,7 @@ namespace ConsoleRS485
         public void Start()
         {
             mySerialPort.Open();
-            timer = new Timer(80);
+            timer = new Timer(50);
             timer.Elapsed += new ElapsedEventHandler(SendCommand);
             timer.Start();
         }
@@ -46,22 +50,11 @@ namespace ConsoleRS485
 
         private void SendCommand(object sender, ElapsedEventArgs e)
         {
-            byte[] command = new byte[] { 0x54 };
+            byte[] command = new byte[] { 0x24 };
             mySerialPort.Write(command, 0, command.Length);
         }
 
-        private int ReverseBits(byte b)
-        {
-            int rev = 0;
-            for (int i = 0; i < 8; i++)
-            {
-                rev <<= 1;
-                rev |= (b & 1);
-                b >>= 1;
-            }
-            return rev;
-        }
-
+    
         private void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
         {
             SerialPort sp = (SerialPort)sender;
@@ -69,25 +62,16 @@ namespace ConsoleRS485
             byte[] receivedData = new byte[bytesToRead];
             sp.Read(receivedData, 0, bytesToRead);
 
-            // Debug: Show the number of bytes received
-            //Console.WriteLine($"Bytes received: {bytesToRead}");
-
-            // Debug: Show the received bytes in hexadecimal
-            //Console.Write("Received bytes: ");
-       
-            //foreach (byte b in receivedData)
-            //{
-            //    Console.Write($"{b:X2} ");
-            //}
-            //Console.WriteLine();
 
             if (receivedData.Length >= 2)
             {
                 byte reversedLowByte = receivedData[0];
                 byte reversedHighByte = receivedData[1];
+                raw_b0_LOW = receivedData[0];
+                raw_b1_HIGH = receivedData[1];
 
                 byte b0 = reversedLowByte;// 0xE4;
-               
+
                 byte b1temp = reversedHighByte;// 0xF9;
                 byte b1 = (byte)(b1temp & 0x3F);
                  rez14 = (int)(b1 << 8) | b0;
@@ -113,9 +97,7 @@ namespace ConsoleRS485
                 rez14_b0_LOW = lowByte2;
                 rez14_b1_HIGH = highByte2;
 
-                //Console.Clear();
-                //Console.WriteLine(rez14);
-                //Console.WriteLine(rez12);
+
             }
         }
         public int getREZ14() { return this.rez14; }
@@ -128,5 +110,22 @@ namespace ConsoleRS485
 
         public byte getREZ12_low() { return this.rez12_b0_LOW; }
         public byte getREZ12_HIGH() { return this.rez12_b1_HIGH; }
+
+
+        public byte getRAW_low() { return this.raw_b0_LOW; }
+        public byte getRAW_HIGH() { return this.raw_b1_HIGH; }
+
+        /*    private int ReverseBits(byte b)
+        {
+            int rev = 0;
+            for (int i = 0; i < 8; i++)
+            {
+                rev <<= 1;
+                rev |= (b & 1);
+                b >>= 1;
+            }
+            return rev;
+        }
+*/
     }
 }
